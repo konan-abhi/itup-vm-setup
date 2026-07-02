@@ -1,0 +1,15 @@
+# Include this file from ~/.ssh/config:
+#   Include /absolute/path/to/itup-vm-setup/ssh-config.snippet
+#
+# Then connect from Cursor: Remote-SSH -> itup-ubuntu-noble
+#
+# Set KUBECONFIG and HostName namespace below after copying config.env.example.
+
+Host itup-ubuntu-noble
+  HostName vmi/ubuntu-noble-vm/your-team--pipeline
+  User ubuntu
+  IdentityFile ~/.ssh/id_rsa
+  IdentitiesOnly yes
+  StrictHostKeyChecking accept-new
+  UserKnownHostsFile ~/.ssh/kubevirt_known_hosts
+  ProxyCommand env KUBECONFIG=/absolute/path/to/itup-vm-setup/.kubeconfig virtctl port-forward --stdio=true %h %p

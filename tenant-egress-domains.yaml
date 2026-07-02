@@ -1,0 +1,70 @@
+apiVersion: tenant.paas.redhat.com/v1alpha1
+kind: TenantEgress
+metadata:
+  name: default
+  namespace: your-team--pipeline
+spec:
+  egress:
+    # Red Hat internal
+    - to:
+        cidrSelector: 172.0.0.0/8
+      type: Allow
+    - to:
+        cidrSelector: 10.0.0.0/9
+      type: Allow
+
+    # GitHub
+    - type: Allow
+      to:
+        dnsName: github.com
+    - type: Allow
+      to:
+        dnsName: githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: objects.githubusercontent.com
+    - to:
+        cidrSelector: 140.82.112.0/20
+      type: Allow
+
+    # PyPI & Python package hosting
+    - type: Allow
+      to:
+        dnsName: pypi.org
+    - type: Allow
+      to:
+        dnsName: pythonhosted.org
+    - type: Allow
+      to:
+        dnsName: files.pythonhosted.org
+
+    # Ubuntu & container registries
+    - type: Allow
+      to:
+        dnsName: cloud-images.ubuntu.com
+    - type: Allow
+      to:
+        dnsName: archive.ubuntu.com
+    - type: Allow
+      to:
+        dnsName: security.ubuntu.com
+    - type: Allow
+      to:
+        dnsName: ppa.launchpad.net
+    - type: Allow
+      to:
+        dnsName: quay.io
+    - type: Allow
+      to:
+        dnsName: production.cloudflare.docker.com
+    - type: Allow
+      to:
+        dnsName: download.cirros-cloud.net
+
+    # OpenDev (OpenStack core repos)
+    - type: Allow
+      to:
+        dnsName: opendev.org
+    - type: Allow
+      to:
+        dnsName: releases.openstack.org

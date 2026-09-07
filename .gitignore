@@ -1,3 +1,10 @@
 .kubeconfig
 noble-server-cloudimg-amd64.img
 config.env
+
+# Personal VM configurations (contain real SSH keys, namespaces, etc.)
+akekane-*.yaml
+connect-akekane-*.sh
+ssh-config.snippet.current
+*-personal.yaml
+*-local.yaml

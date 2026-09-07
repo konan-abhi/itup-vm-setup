@@ -1,0 +1,62 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ubuntu-medium-vm
+  namespace: your-team--pipeline
+  labels:
+    app: ubuntu-medium-vm
+    template.kubevirt.io/type: vm
+    os.template.kubevirt.io/ubuntu: "true"
+    workload.template.kubevirt.io/server: "true"
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: ubuntu-medium-vm
+    spec:
+      domain:
+        cpu:
+          cores: 4
+          sockets: 1
+          threads: 1
+        memory:
+          guest: 16Gi
+        resources:
+          requests:
+            cpu: 4
+            memory: 16Gi
+          limits:
+            cpu: 4
+            memory: 16Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+              model: virtio
+          networkInterfaceMultiqueue: true
+          rng: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ubuntu-medium-image
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              user: ubuntu
+              ssh_pwauth: false
+              chpasswd:
+                expire: false
+              ssh_authorized_keys:
+                - REPLACE_WITH_YOUR_SSH_PUBLIC_KEY

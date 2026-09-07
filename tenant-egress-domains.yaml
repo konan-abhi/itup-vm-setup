@@ -60,11 +60,96 @@ spec:
     - type: Allow
       to:
         dnsName: download.cirros-cloud.net
+    # Ubuntu PPA API, Keyservers, and Content Networks
+    - type: Allow
+      to:
+        dnsName: api.launchpad.net
+    - type: Allow
+      to:
+        dnsName: ppa.launchpadcontent.net
+    - type: Allow
+      to:
+        dnsName: keyserver.ubuntu.com
+    # ADD THESE IP BLOCKS DIRECTLY:
+    - type: Allow
+      to:
+        cidrSelector: 185.125.190.0/24  # Covers Launchpad's primary IPv4 range
+    - type: Allow
+      to:
+        cidrSelector: 2620:2d:4000::/48  # Covers Launchpad's primary IPv6 range
 
-    # OpenDev (OpenStack core repos)
+    # Ubuntu & container registries
+    - type: Allow
+      to:
+        dnsName: ppa.launchpadcontent.net
+      # If your proxy provider supports it, enforce an TLS-passthrough or blind routing option:
+      backend: passthrough 
+
+    #
+    # Allow access to OpenDev
+    #
+    # Rationale: contains official OpenStack upstream source code repositories
+    #            (the releases page hosts shortcuts to the constraints files).
+    #
     - type: Allow
       to:
         dnsName: opendev.org
+
+    - type: Allow
+      to:
+        dnsName: review.opendev.org
+
+    - type: Allow
+      to:
+        dnsName: tarballs.opendev.org
+
     - type: Allow
       to:
         dnsName: releases.openstack.org
+
+    #
+    # Google Cloud APIs (for Vertex AI and other GCP services)
+    #
+    # Rationale: enables Vertex AI SDK, Cloud Storage, and other GCP APIs
+    #
+    - type: Allow
+      to:
+        dnsName: googleapis.com
+    - type: Allow
+      to:
+        dnsName: storage.googleapis.com
+    - type: Allow
+      to:
+        dnsName: aiplatform.googleapis.com
+    - type: Allow
+      to:
+        dnsName: ml.googleapis.com
+    - type: Allow
+      to:
+        dnsName: cloudresourcemanager.googleapis.com
+    - type: Allow
+      to:
+        dnsName: iam.googleapis.com
+    - type: Allow
+      to:
+        dnsName: serviceusage.googleapis.com
+    - type: Allow
+      to:
+        dnsName: oauth2.googleapis.com
+    - type: Allow
+      to:
+        dnsName: www.googleapis.com
+    - type: Allow
+      to:
+        dnsName: accounts.google.com
+    # Google Cloud package repositories
+    - type: Allow
+      to:
+        dnsName: packages.cloud.google.com
+    # GCP IP ranges (Google services)
+    - type: Allow
+      to:
+        cidrSelector: 34.64.0.0/10      # Google Cloud Platform services
+    - type: Allow
+      to:
+        cidrSelector: 35.184.0.0/13     # Google Cloud Platform services

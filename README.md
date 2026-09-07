@@ -247,14 +247,14 @@ Include /path/to/itup-vm-setup/ssh-config.snippet
 Then connect:
 
 ```bash
-ssh itup-ubuntu-noble
+ssh itup-akekane-ceph
 ```
 
 Verify:
 
 ```bash
-ssh itup-ubuntu-noble hostname
-# ubuntu-noble-vm
+ssh itup-akekane-ceph hostname
+# akekane-ceph
 ```
 
 ### Serial console (fallback)
@@ -280,7 +280,7 @@ Add this line to `~/.ssh/config`:
 Include /path/to/itup-vm-setup/ssh-config.snippet
 ```
 
-The snippet defines host `itup-ubuntu-noble` with a `ProxyCommand` that runs
+The snippet defines host `itup-akekane-ceph` with a `ProxyCommand` that runs
 `virtctl port-forward` using your local `.kubeconfig`.
 
 ### 10.2 — Ensure you are logged in
@@ -296,7 +296,7 @@ If not, get a fresh token from the ITUP console and re-run `oc login` (Step 2).
 
 1. `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Linux)
 2. **Remote-SSH: Connect to Host...**
-3. Select **`itup-ubuntu-noble`**
+3. Select **`itup-akekane-ceph`**
 4. When connected: **File → Open Folder** → `/home/ubuntu`
 
 You now have a full remote workspace on the VM.
@@ -384,19 +384,28 @@ oc get appliedclusterresourcequota \
 
 ---
 
-## Repository files
+## Repository Structure
 
-| File | Purpose |
-|------|---------|
-| `README.md` | This guide |
-| `ubuntu-vm.yaml` | KubeVirt VirtualMachine manifest |
-| `tenant-egress-domains.yaml` | Outbound network allowlist (optional) |
-| `config.env.example` | Template for local cluster/namespace config |
-| `setup.sh` | Automated setup script |
-| `ssh-config.snippet` | SSH config for CLI and Cursor Remote SSH |
-| `.gitignore` | Ignores credentials, images, and `config.env` |
+```
+.
+├── README.md                          # This guide
+├── ubuntu-vm.yaml                     # Default VM configuration (3 CPU, 8GB)
+├── tenant-egress-domains.yaml         # Outbound network allowlist (includes GCP APIs)
+├── config.env.example                 # Template for cluster config
+├── setup.sh                           # Automated setup script
+├── create-custom-vm.sh                # Helper to create VMs from templates
+├── ssh-config.snippet                 # SSH config for CLI and Cursor
+├── examples/                          # VM configuration templates
+│   ├── README.md                      # Detailed guide for using templates
+│   ├── vm-small.yaml                  # 2 CPU, 4GB RAM
+│   ├── vm-medium.yaml                 # 4 CPU, 16GB RAM
+│   ├── vm-large.yaml                  # 8 CPU, 32GB RAM
+│   └── vm-xlarge.yaml                 # 16 CPU, 64GB RAM
+└── docs/
+    └── vertex-ai-setup.md             # Vertex AI configuration guide
+```
 
-Local files (not committed):
+**Local files (not committed):**
 
 | File | Purpose |
 |------|---------|
@@ -406,13 +415,122 @@ Local files (not committed):
 
 ---
 
-## Customization
+## VM Size Options
+
+The repository includes example configurations for different VM sizes in the `examples/` directory:
+
+| Size | CPUs | Memory | Disk | Use Case |
+|------|------|--------|------|----------|
+| **Small** | 2 | 4 GiB | 20 GiB | Light development, testing |
+| **Default** | 3 | 8 GiB | 20 GiB | General development (in `ubuntu-vm.yaml`) |
+| **Medium** | 4 | 16 GiB | 40 GiB | ML training, data processing |
+| **Large** | 8 | 32 GiB | 80 GiB | Heavy workloads, multiple services |
+| **XLarge** | 16 | 64 GiB | 160 GiB | Intensive ML/AI, large datasets |
+
+### Creating a VM with Custom Resources
+
+**Option 1: Use the helper script (easiest)**
+
+```bash
+# Create a medium-sized VM named 'ml-training-vm'
+./create-custom-vm.sh ml-training-vm medium
+
+# Create a large VM with custom disk size
+./create-custom-vm.sh data-processing-vm large 200Gi
+
+# Create a small dev VM
+./create-custom-vm.sh dev-vm small
+```
+
+The script will:
+- Generate a customized VM YAML from the template
+- Insert your SSH public key automatically
+- Download the Ubuntu image (if needed)
+- Upload to the cluster with the appropriate disk size
+- Create and start the VM
+- Display connection instructions
+
+**Option 2: Use a pre-configured example**
+
+```bash
+# Copy the example to your workspace
+cp examples/vm-medium.yaml my-custom-vm.yaml
+
+# Update namespace and SSH key
+sed -i '' 's/your-team--pipeline/YOUR_NAMESPACE/g' my-custom-vm.yaml
+sed -i '' 's/REPLACE_WITH_YOUR_SSH_PUBLIC_KEY/YOUR_SSH_KEY/g' my-custom-vm.yaml
+
+# Upload with appropriate disk size
+virtctl image-upload dv ubuntu-medium-image \
+  --image-path=noble-server-cloudimg-amd64.img \
+  -n "${NAMESPACE}" \
+  --size=40Gi \
+  --insecure
+
+# Create the VM
+oc apply -f my-custom-vm.yaml
+```
+
+**Option 2: Customize manually**
+
+Edit the CPU/memory in your VM YAML file:
+
+```yaml
+spec:
+  template:
+    spec:
+      domain:
+        cpu:
+          cores: 8        # Number of CPU cores
+          sockets: 1
+          threads: 1
+        memory:
+          guest: 32Gi     # Memory allocation
+        resources:
+          requests:
+            cpu: 8        # Must match cores
+            memory: 32Gi  # Must match guest
+          limits:
+            cpu: 8
+            memory: 32Gi
+```
+
+**Important notes:**
+
+- Larger VMs consume more namespace quota; check limits with:
+  ```bash
+  oc get appliedclusterresourcequota -n "${NAMESPACE}"
+  ```
+- Match disk size to your needs; larger disks increase storage quota usage
+- Keep `requests` and `limits` identical to avoid resource overcommit
+- For disk sizes > 20GiB, use `--size=XGi` in the `virtctl image-upload` command
+
+---
+
+## Vertex AI Configuration
+
+To use Google Cloud Vertex AI on your VM, see the detailed setup guide:
+
+**[Vertex AI Setup Guide](docs/vertex-ai-setup.md)**
+
+The guide covers:
+- Installing Google Cloud SDK on the VM
+- Service account authentication
+- Installing Vertex AI Python SDK
+- Required IAM permissions
+- Example workloads (training, batch prediction, pre-trained models)
+- Troubleshooting network and authentication issues
+
+---
+
+## Customization Reference
 
 | Setting | Where to change |
 |---------|-----------------|
 | Cluster API / namespace | `config.env` (from ITUP console) |
 | VM name | `metadata.name` in `ubuntu-vm.yaml`, `VM_NAME` in `setup.sh` |
-| CPU / memory | `spec.template.spec.domain` in `ubuntu-vm.yaml` |
+| CPU / memory | `spec.template.spec.domain` in `ubuntu-vm.yaml` (see VM Size Options above) |
 | Disk size | `--size` in upload command, `DATAVOLUME_SIZE` in `setup.sh` |
 | SSH key | `ssh_authorized_keys` in `ubuntu-vm.yaml` |
-| SSH host alias | `Host itup-ubuntu-noble` in `ssh-config.snippet` |
+| SSH host alias | `Host itup-akekane-ceph` in `ssh-config.snippet` |
+| VM size template | Use files in `examples/` directory as starting point |

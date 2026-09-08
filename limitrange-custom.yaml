@@ -1,0 +1,35 @@
+#
+# Custom LimitRange configuration for the rhos-storage-manila tenant,
+# oriented for RHOSO-related development environments.
+#
+# NOTE: make sure to use the --namespace parameter for `oc apply`!
+#
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: limits
+spec:
+  limits:
+    - type: Pod
+      max:  # The values take into account the virt-launcher overhead (!)
+        cpu: "33"
+        memory: 65Gi
+    - type: Container
+      default:
+        cpu: "1"
+        memory: 2Gi
+      defaultRequest:
+        cpu: 256m
+        memory: 512Mi
+      max:  # The values take into account the virt-launcher overhead (!)
+        cpu: "33"
+        memory: 65Gi
+      maxLimitRequestRatio:
+        cpu: "10"
+    - type: openshift.io/Image
+      max:
+        storage: 2Gi
+    - type: openshift.io/ImageStream
+      max:
+        openshift.io/image-tags: "256"
+        openshift.io/images: "256"

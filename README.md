@@ -391,6 +391,7 @@ oc get appliedclusterresourcequota \
 ├── README.md                          # This guide
 ├── ubuntu-vm.yaml                     # Default VM configuration (3 CPU, 8GB)
 ├── tenant-egress-domains.yaml         # Outbound network allowlist (includes GCP APIs)
+├── limitrange-custom.yaml             # Custom LimitRange to raise per-VM CPU/memory caps
 ├── config.env.example                 # Template for cluster config
 ├── setup.sh                           # Automated setup script
 ├── create-custom-vm.sh                # Helper to create VMs from templates
@@ -504,6 +505,34 @@ spec:
 - Match disk size to your needs; larger disks increase storage quota usage
 - Keep `requests` and `limits` identical to avoid resource overcommit
 - For disk sizes > 20GiB, use `--size=XGi` in the `virtctl image-upload` command
+
+---
+
+## Increasing Per-VM Resource Limits (LimitRange)
+
+By default, the ITUP namespace has a `LimitRange` named `limits` that caps the
+resources any single VM can request. You can raise these caps by applying a custom 
+LimitRange to your project namespace.
+
+### Check the current limits
+
+```bash
+oc get limitrange limits -n rhos-storage-<your-project> -o yaml
+```
+
+### Apply the custom LimitRange
+
+The file [`limitrange-custom.yaml`](limitrange-custom.yaml) in this repository
+raises the per-Pod and per-Container maximums to 33 CPUs / 65 GiB memory
+(values include the `virt-launcher` overhead). Apply it to your namespace:
+
+```bash
+oc apply -f limitrange-custom.yaml --namespace rhos-storage-<your-project>
+```
+
+> **Note:** This only raises the per-VM/resource limits. If the overall
+> **resource quota** for your namespace needs to be increased, a support ticket
+> is still required.
 
 ---
 
